@@ -177,6 +177,7 @@ type Sides<T> = { top: T; right: T; bottom: T; left: T };
 
   When the fixed and `auto` columns exceed the content width, the `auto` columns first give space back, down to their longest word. Then the table throws `table-too-wide`, naming both widths. It never squeezes or overflows silently.
 - **A cell can span columns and have a fill.**
+  - A row's cells span the table's columns exactly. A row that spans more or fewer throws `block-invalid`, naming the row: a missing cell is a mistake in the data more often than a blank.
   - The table's borders are `grid`, `rows` (a rule between rows) or `none`.
   - A cell can override any side with `border`. That covers a rule above a total and a signature line.
 

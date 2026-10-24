@@ -70,8 +70,7 @@ function measureColumn(
 	let longestWord = 0;
 	for (const row of rows) {
 		const cell = cellAt(row, column);
-		if (!cell || (typeof cell !== "string" && (cell.colSpan ?? 1) > 1))
-			continue;
+		if (!cell || spanOf(cell) > 1) continue;
 		const parts = cellParts(cell);
 		const natural = naturalWidths(
 			runsOf(styles, styles.cascade(cascade, parts), parts.text, undefined),
@@ -85,12 +84,46 @@ function measureColumn(
 	};
 }
 
+/** How many columns a cell spans. */
+export const spanOf = (cell: Cell): number =>
+	typeof cell === "string" ? 1 : (cell.colSpan ?? 1);
+
+/** Throws unless each row's cells span the table's columns exactly, each a whole number of them. */
+export function checkSpans(
+	header: readonly (readonly Cell[])[],
+	rows: readonly (readonly Cell[])[],
+	columns: number,
+): void {
+	const check = (row: readonly Cell[], name: string) => {
+		let spanned = 0;
+		for (const cell of row) {
+			const span = spanOf(cell);
+			if (!Number.isInteger(span) || span < 1)
+				throw new PdfError(
+					"block-invalid",
+					`A cell in ${name} of a table has colSpan ${span}. Make it a whole number of columns, 1 or more.`,
+				);
+			spanned += span;
+		}
+		if (spanned !== columns)
+			throw new PdfError(
+				"block-invalid",
+				`The cells in ${name} of a table span ${counted(spanned)}, and its widths make ${counted(columns)}. Give the row cells that span all ${columns}.`,
+			);
+	};
+	for (const [i, row] of header.entries()) check(row, `header row ${i + 1}`);
+	for (const [i, row] of rows.entries()) check(row, `row ${i + 1}`);
+}
+
+const counted = (columns: number) =>
+	columns === 1 ? "1 column" : `${columns} columns`;
+
 /** The cell that starts at `column`, counting the columns each cell before it spans. */
-export function cellAt(row: readonly Cell[], column: number): Cell | undefined {
+function cellAt(row: readonly Cell[], column: number): Cell | undefined {
 	let at = 0;
 	for (const cell of row) {
 		if (at === column) return cell;
-		at += typeof cell === "string" ? 1 : (cell.colSpan ?? 1);
+		at += spanOf(cell);
 		if (at > column) return undefined;
 	}
 	return undefined;

@@ -245,6 +245,21 @@ describe("what foaie refuses", () => {
 			"table-too-wide",
 		],
 		[
+			"a row spanning more columns than the table has",
+			page([{ table: { widths: ["*", "*"], rows: [["a", "b", "c"]] } }]),
+			"block-invalid",
+		],
+		[
+			"a row spanning fewer columns than the table has",
+			page([{ table: { widths: ["*", "*"], rows: [["a", "b"], ["c"]] } }]),
+			"block-invalid",
+		],
+		[
+			"a cell spanning no columns",
+			page([{ table: { widths: ["*"], rows: [[{ text: "a", colSpan: 0 }]] } }]),
+			"block-invalid",
+		],
+		[
 			"an auto column narrower than a word its no-break spaces hold together",
 			page([
 				{
