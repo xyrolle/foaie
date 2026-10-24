@@ -1,7 +1,7 @@
-// A table's rows once laid out: drawn with their fills, text and borders, or split between lines
-// when a page can't hold them.
+// A table's rows once laid out: the sides each cell draws, then drawn with their fills, text and borders,
+// or split between lines when a page can't hold them.
 
-import type { Align, Sides } from "../document.ts";
+import type { Align, Sides, Table } from "../document.ts";
 import type { Line } from "../text/lines.ts";
 import type { PageContent } from "./page.ts";
 import { heightOf, lineStart } from "./paragraph.ts";
@@ -21,6 +21,40 @@ export type LaidRow = { cells: LaidCell[]; height: number; uniform: boolean };
 
 /** How a table pads its cells, and how it strokes their borders. */
 export type RowStyle = { padding: { x: number; y: number }; stroke: string };
+
+const NO_SIDES: Sides<boolean> = {
+	top: false,
+	right: false,
+	bottom: false,
+	left: false,
+};
+const ALL_SIDES: Sides<boolean> = {
+	top: true,
+	right: true,
+	bottom: true,
+	left: true,
+};
+
+/** The sides a table's `borders` draws around each cell of a row: no rule below the last row. */
+export function rowSides(
+	borders: Table["table"]["borders"],
+	last: boolean,
+): Sides<boolean> {
+	if (borders === "grid") return ALL_SIDES;
+	if (borders === "rows") return { ...NO_SIDES, bottom: !last };
+	return NO_SIDES;
+}
+
+/** A row's sides for one cell, with the ones its `border` sets. */
+export const withBorder = (
+	sides: Sides<boolean>,
+	border: Partial<Sides<boolean>>,
+): Sides<boolean> => ({
+	top: border.top ?? sides.top,
+	right: border.right ?? sides.right,
+	bottom: border.bottom ?? sides.bottom,
+	left: border.left ?? sides.left,
+});
 
 const rowOf = (
 	cells: LaidCell[],
