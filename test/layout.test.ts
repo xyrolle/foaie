@@ -57,6 +57,14 @@ describe("line breaking", () => {
 		expect(linesOf("  Total   due  ", 30)).toEqual(["Total", "due"]);
 	});
 
+	it("reads a tab as a space, and a carriage return, alone or before a line feed, as a line break", () => {
+		expect(linesOf("one\ttwo\r\nthree\rfour", 200)).toEqual([
+			"one two",
+			"three",
+			"four",
+		]);
+	});
+
 	it("breaks a word wider than the line between its characters", () => {
 		const lines = linesOf(
 			"Rindfleischetikettierungsüberwachungsaufgabenübertragungsgesetz",
