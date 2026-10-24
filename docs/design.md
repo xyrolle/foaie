@@ -145,7 +145,7 @@ type Sides<T> = { top: T; right: T; bottom: T; left: T };
   - Arabic, Hebrew, Indic and Southeast Asian scripts print in logical order, unshaped. Shaping them correctly would take an engine larger than this whole library.
 - **A character the face lacks prints the face's `.notdef` box.** Fallback faces are a follow-up.
 - **Line breaking:**
-  - a line breaks at spaces and after hyphens;
+  - a line breaks at spaces and after hyphens; a word that changes style partway, as a bold "Total" before its colon does, stays whole;
   - a no-break space holds its words together;
   - spaces in a row set as one, and a line drops the spaces at its ends, as HTML does;
   - `\n` starts a new line, and so do `\r\n` and `\r`, as text from a form or a Windows file has them;

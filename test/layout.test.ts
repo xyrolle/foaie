@@ -72,6 +72,25 @@ describe("line breaking", () => {
 		]);
 	});
 
+	it("keeps a word whole across the runs it is made of", () => {
+		const style = new Styles({ Roboto: family }).style(
+			defaultCascade({ font: "Roboto", size: 10 }),
+		);
+		// Just wide enough for the first run's words, as the line breaker adds them up.
+		const width = ["Due", " ", "on", " ", "Total"].reduce(
+			(sum, token) => sum + widthOf(style.use.face, token, 10),
+			0,
+		);
+		const lines = breakLines(
+			[
+				{ text: "Due on Total", style, link: undefined },
+				{ text: ": 1 500.00", style, link: undefined },
+			],
+			width,
+		).map((line) => line.pieces.map((piece) => piece.text).join(""));
+		expect(lines).toEqual(["Due on", "Total: 1", "500.00"]);
+	});
+
 	it("measures a line as it draws, kerning between the runs it joins included", () => {
 		const style = new Styles({ Roboto: family }).style(
 			defaultCascade({ font: "Roboto", size: 10 }),
@@ -288,6 +307,20 @@ describe("what foaie refuses", () => {
 		[
 			"a table wider than the page",
 			page([{ table: { widths: [200, 200], rows: [["a", "b"]] } }]),
+			"table-too-wide",
+		],
+		[
+			"an auto column narrower than a word its runs make together",
+			page([
+				{
+					table: {
+						widths: [297, "auto"],
+						rows: [
+							["Total", { text: [{ text: "1234", bold: true }, "567.89"] }],
+						],
+					},
+				},
+			]),
 			"table-too-wide",
 		],
 		[
