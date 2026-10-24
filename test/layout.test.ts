@@ -122,6 +122,26 @@ describe("page breaking", () => {
 	});
 });
 
+describe("headers and footers", () => {
+	it("lays out the header in every page's top margin, knowing the page count", async () => {
+		const content = Array.from({ length: 60 }, (_, i) => ({
+			text: `line ${i + 1}`,
+		}));
+		const pages = await pageTexts(
+			await render(
+				page(content, {
+					header: ({ page, pages }) => [
+						{ text: `Header ${page}/${pages}`, spaceBefore: 12 },
+					],
+				}),
+			),
+		);
+		expect(pages).toHaveLength(2);
+		for (const [i, text] of pages.entries())
+			expect(text).toContain(`Header ${i + 1}/2`);
+	});
+});
+
 describe("links and metadata", () => {
 	it("links a span's text to its URL, and writes the document's information and language", async () => {
 		const pdf = await render(
