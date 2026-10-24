@@ -147,7 +147,8 @@ type Sides<T> = { top: T; right: T; bottom: T; left: T };
   - a line breaks at spaces and after hyphens;
   - a no-break space holds its words together;
   - spaces in a row set as one, and a line drops the spaces at its ends, as HTML does;
-  - `\n` starts a new line;
+  - `\n` starts a new line, and so do `\r\n` and `\r`, as text from a form or a Windows file has them;
+  - a tab reads as a space;
   - a word wider than the line breaks between characters, which is also how a CJK paragraph breaks.
 
   The full Unicode line-breaking algorithm is out of scope.
