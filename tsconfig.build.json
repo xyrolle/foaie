@@ -1,0 +1,12 @@
+// The package as published: the sources compiled into dist, with their declarations. The library
+// itself sees only the platform's types (no Node), so a Node API can never slip into it.
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"noEmit": false,
+		"outDir": "dist",
+		"rootDir": "src",
+		"types": []
+	},
+	"include": ["src"]
+}
