@@ -3,7 +3,7 @@
 import type { Document } from "./document.ts";
 import { type Layout, placeBlocks } from "./layout/blocks.ts";
 import { decorate } from "./layout/decorations.ts";
-import { Flow } from "./layout/flow.ts";
+import { Flow, pageTooSmall } from "./layout/flow.ts";
 import { PageContent } from "./layout/page.ts";
 import { decimal as d, defaultCascade, Styles } from "./layout/style.ts";
 import { writeFont } from "./pdf/fonts.ts";
@@ -44,6 +44,10 @@ export async function render(document: Document): Promise<Uint8Array> {
 		width: width - margin.left - margin.right,
 		bottom: height - margin.bottom,
 	};
+	if (area.width <= 0 || area.bottom <= area.top)
+		throw pageTooSmall(
+			`The margins leave no room for content on a page of ${d(width)} × ${d(height)} points. Make them narrower, or the page larger.`,
+		);
 	const flow = new Flow(area, new PageContent(width, height), async () => {
 		await finish(flow.page);
 		return new PageContent(width, height);

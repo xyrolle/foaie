@@ -161,6 +161,7 @@ type Sides<T> = { top: T; right: T; bottom: T; left: T };
   - a paragraph between lines;
   - a table between rows, with its header rows repeated on every page it continues on;
   - an image never splits, and one taller than the body is scaled down to fit.
+- **What no page can hold throws `page-too-small`, rather than being drawn past the page's edge:** margins that leave no room, a line taller than the page's body, or a table header that leaves no room for a line of its rows.
 - **A table row moves whole to the next page when it fits on an empty one.** A row taller than a page splits between its lines, and every part repeats the header. Long tables are read row by row, so splitting is kept for rows that can never fit.
 - **`keepWithNext` keeps a paragraph on the page with the first line or row after it.** It is meant for headings.
 - **`keepTogether` moves a stack or a table to the next page whole, when it fits on one page.** If it can't, it flows as usual.

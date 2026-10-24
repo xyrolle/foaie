@@ -8,6 +8,7 @@ export type PdfErrorCode =
 	| "font-invalid"
 	| "image-format"
 	| "image-invalid"
+	| "page-too-small"
 	| "table-too-wide";
 
 /** An error foaie raises: its message says what to change, and its code is stable. */

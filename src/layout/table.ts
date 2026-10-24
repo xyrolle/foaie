@@ -2,9 +2,10 @@
 // each row moved whole to the next page when it fits on one, and split between lines when it can't.
 
 import type { Cell, Sides, Table, TextStyle } from "../document.ts";
+import type { PdfError } from "../errors.ts";
 import { breakLines, type Line } from "../text/lines.ts";
 import { cellParts, checkSpans, columnWidths, spanOf } from "./columns.ts";
-import type { Flow } from "./flow.ts";
+import { type Flow, pageTooSmall } from "./flow.ts";
 import { stroke } from "./page.ts";
 import { heightOf, runsOf } from "./paragraph.ts";
 import {
@@ -116,7 +117,9 @@ export class TableLayout {
 			drawRow(flow.page, row, flow.y, this.#rowStyle);
 			flow.y += row.height;
 		};
-		await flow.fit(this.startHeight());
+		// A first row taller than a page starts at the top of one, and splits there.
+		await flow.fit(Math.min(this.startHeight(), flow.pageHeight));
+		if (headerHeight > flow.room) throw noRoomForRows(headerHeight, flow);
 		header.forEach(draw);
 		const rows = this.#spec.rows;
 		for (let i = 0; i < rows.length; i++) {
@@ -127,8 +130,8 @@ export class TableLayout {
 					? [undefined, row]
 					: splitRow(row, flow.room, this.#rowStyle);
 				if (part) draw(part);
-				// On a page holding only the header, a row that still can't start is drawn as it is.
-				else if (flow.y === flow.area.top + headerHeight) break;
+				else if (flow.y === flow.area.top + headerHeight)
+					throw noRoomForRows(headerHeight, flow);
 				await flow.newPage();
 				header.forEach(draw);
 				row = rest;
@@ -198,4 +201,10 @@ export class TableLayout {
 			width,
 		);
 	}
+}
+
+function noRoomForRows(headerHeight: number, flow: Flow): PdfError {
+	return pageTooSmall(
+		`A table's header is ${Math.ceil(headerHeight)} points tall, and leaves too little of the page's ${Math.floor(flow.pageHeight)}-point body for a line of its rows. Make the header shorter, or the page larger or its margins narrower.`,
+	);
 }

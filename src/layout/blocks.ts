@@ -97,8 +97,8 @@ function fitted(
 	picture: Picture,
 ): { width: number; height: number } {
 	const { width, height } = layout.sizeOf(picture, flow.area.width);
-	const scale = Math.min(1, flow.pageHeight / height);
-	return { width: width * scale, height: height * scale };
+	if (height <= flow.pageHeight) return { width, height };
+	return { width: (width * flow.pageHeight) / height, height: flow.pageHeight };
 }
 
 /** A block's height: all of it, or what must fit for it to start on a page (its first line or row). */

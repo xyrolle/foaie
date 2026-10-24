@@ -40,10 +40,18 @@ export class Flow {
 		return this.y === this.area.top;
 	}
 
-	/** Makes room for `height`, moving to the next page unless this one has it or is still empty. */
+	/**
+	 * Makes room for `height`, moving to the next page unless this one has it or is still empty.
+	 * Only a line can be taller than a whole page's body: pictures are scaled down to fit one, and
+	 * tables split between lines.
+	 */
 	async fit(height: number): Promise<void> {
 		if (height <= this.room) return;
 		if (!this.#next) throw tooTall();
+		if (height > this.pageHeight)
+			throw pageTooSmall(
+				`A line is ${Math.ceil(height)} points tall, and the page's body only ${Math.floor(this.pageHeight)}. Make its text smaller, or the page larger or its margins narrower.`,
+			);
 		if (!this.atTop) await this.newPage();
 	}
 
@@ -52,6 +60,11 @@ export class Flow {
 		this.page = await this.#next();
 		this.y = this.area.top;
 	}
+}
+
+/** Content that no page can hold: `message` says what, and how to make it fit. */
+export function pageTooSmall(message: string): PdfError {
+	return new PdfError("page-too-small", message);
 }
 
 /** A decoration's flow has one page: what doesn't fit its margin can't move on. */
