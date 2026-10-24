@@ -3,6 +3,7 @@
 // https://www.w3.org/TR/png-3/#9Filters
 
 import { inflate } from "../deflate.ts";
+import { PdfError } from "../errors.ts";
 import type { Header } from "./png.ts";
 
 /** The image's colour samples, and the alpha its soft mask draws them through. */
@@ -16,7 +17,12 @@ export async function decode(
 	data: Uint8Array<ArrayBuffer>,
 	header: Header,
 ): Promise<Uint8Array<ArrayBuffer>> {
-	return unfilter(await inflate(data), header);
+	const inflated = await inflate(data).catch((cause: unknown) => {
+		throw broken("has image data that doesn't inflate: the file is damaged", {
+			cause,
+		});
+	});
+	return unfilter(inflated, header);
 }
 
 /** Undoes PNG's per-row filters, leaving the raw samples row after row. */
@@ -26,6 +32,10 @@ function unfilter(
 ): Uint8Array<ArrayBuffer> {
 	const bitsPerPixel = channels * depth;
 	const stride = Math.ceil((width * bitsPerPixel) / 8);
+	if (filtered.length < (stride + 1) * height)
+		throw broken(
+			`has less image data than its ${width} × ${height} pixels need`,
+		);
 	const left = Math.max(1, bitsPerPixel / 8); // the byte distance to the same sample one pixel back
 	const out = new Uint8Array(stride * height);
 	for (let row = 0; row < height; row++) {
@@ -94,3 +104,10 @@ export function paletteAlpha(
 		}
 	return { color: pixels, alpha };
 }
+
+const broken = (problem: string, options?: ErrorOptions): PdfError =>
+	new PdfError(
+		"image-invalid",
+		`The PNG ${problem}. Save the image again.`,
+		options,
+	);
