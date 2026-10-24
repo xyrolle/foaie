@@ -2,6 +2,7 @@
 // that says where each one starts (ISO 32000-1, 7.5).
 
 import { deflate } from "../deflate.ts";
+import { PdfError } from "../errors.ts";
 
 const encoder = new TextEncoder();
 /** The header, and a comment of four bytes above 127 that tells transfer tools the file is binary. */
@@ -141,6 +142,11 @@ export function uriString(uri: string): string {
 
 /** A date as PDF writes one, in UTC: D:YYYYMMDDHHmmSSZ (ISO 32000-1, 7.9.4). */
 export function pdfDate(date: Date): string {
+	if (Number.isNaN(date.getTime()))
+		throw new PdfError(
+			"number-invalid",
+			"info.created is an invalid Date. Give a valid one, or leave it out.",
+		);
 	const two = (n: number) => String(n).padStart(2, "0");
 	return `(D:${date.getUTCFullYear()}${two(date.getUTCMonth() + 1)}${two(date.getUTCDate())}${two(date.getUTCHours())}${two(date.getUTCMinutes())}${two(date.getUTCSeconds())}Z)`;
 }

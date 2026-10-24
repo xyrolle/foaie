@@ -115,6 +115,7 @@ type Sides<T> = { top: T; right: T; bottom: T; left: T };
 - **Style is inherited: from the document, to the block, to the cell, to the span.**
   - There are no named style sheets. The definition is code, so a shared style is a constant spread into blocks.
 - **The unit is the point (1/72 inch).** `mm()` exists because A-series pages, and the people who lay them out, think in millimetres.
+- **A number that isn't finite throws `number-invalid`,** naming the field where it can. PDF can't write NaN or Infinity, and a spacing of either would silently move a block to another page.
 - **A table's widths are outer widths, padding included,** so the numbers add up to what is printed. pdfmake's widths leave the padding out; that is deliberately not copied.
 - **Spacing is vertical only: `spaceBefore` and `spaceAfter`.** Blocks fill the content width, and horizontal placement goes through a table. No reference document needs indents.
 - **Colours are `#rgb` or `#rrggbb`, in RGB.** CMYK is a follow-up.

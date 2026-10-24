@@ -1,7 +1,7 @@
 // Blocks set down the flow in order, kept with what follows them or kept together when asked.
 
 import type { Block, Picture } from "../document.ts";
-import { PdfError } from "../errors.ts";
+import { finite, PdfError } from "../errors.ts";
 import type { Flow } from "./flow.ts";
 import { heightOf, paragraphLines, placeLines } from "./paragraph.ts";
 import type { Cascade, Styles } from "./style.ts";
@@ -18,6 +18,10 @@ export type Layout = {
 };
 
 const KINDS = ["text", "table", "image", "stack"] as const;
+
+/** The space a block asks for before or after it, in points. */
+const space = (block: Block, side: "spaceBefore" | "spaceAfter"): number =>
+	finite(block[side] ?? 0, `A block's ${side}`);
 
 /** Each block is named by exactly one key. */
 function checkKind(block: Block): void {
@@ -39,15 +43,15 @@ export async function placeBlocks(
 		const block = blocks[i];
 		if (!block) continue;
 		checkKind(block);
-		flow.y += block.spaceBefore ?? 0;
+		flow.y += space(block, "spaceBefore");
 		const next = blocks[i + 1];
 		if ("text" in block && block.keepWithNext && next) {
 			const together =
 				heightOf(
 					paragraphLines(layout.styles, cascade, block, flow.area.width),
 				) +
-				(block.spaceAfter ?? 0) +
-				(next.spaceBefore ?? 0) +
+				space(block, "spaceAfter") +
+				space(next, "spaceBefore") +
 				measure(layout, flow, next, cascade, "start");
 			if (together <= flow.pageHeight) await flow.fit(together);
 		}
@@ -56,7 +60,7 @@ export async function placeBlocks(
 			if (whole <= flow.pageHeight) await flow.fit(whole);
 		}
 		await placeBlock(layout, flow, block, cascade);
-		flow.y += block.spaceAfter ?? 0;
+		flow.y += space(block, "spaceAfter");
 	}
 }
 
@@ -129,16 +133,16 @@ function measure(
 	if (part === "start") {
 		const [first] = block.stack;
 		return first
-			? (first.spaceBefore ?? 0) +
+			? space(first, "spaceBefore") +
 					measure(layout, flow, first, cascade, "start")
 			: 0;
 	}
 	return block.stack.reduce(
 		(sum, child) =>
 			sum +
-			(child.spaceBefore ?? 0) +
+			space(child, "spaceBefore") +
 			measure(layout, flow, child, cascade, "whole") +
-			(child.spaceAfter ?? 0),
+			space(child, "spaceAfter"),
 		0,
 	);
 }
