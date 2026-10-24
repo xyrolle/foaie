@@ -25,3 +25,17 @@ describe("the text a reader extracts", () => {
 		expect(text).toBe("Total 漢字 ✓");
 	});
 });
+
+describe("the fonts a document embeds", () => {
+	it("are only the faces its pages draw with", async () => {
+		const pdf = await render({
+			...paragraph(""),
+			content: [
+				{ table: { widths: ["*"], rows: [[{ text: "Total", bold: true }]] } },
+			],
+		});
+		const written = new TextDecoder("latin1").decode(pdf);
+		expect(written.match(/\/FontFile2/g)).toHaveLength(1);
+		expect(written).toContain("+Roboto-Medium");
+	});
+});
