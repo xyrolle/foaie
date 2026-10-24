@@ -22,13 +22,18 @@ const RGB = 2;
 const PALETTE = 3;
 const GRAY_ALPHA = 4;
 const RGB_ALPHA = 6;
-const CHANNELS: Record<number, number> = {
-	[GRAY]: 1,
-	[RGB]: 3,
-	[PALETTE]: 1,
-	[GRAY_ALPHA]: 2,
-	[RGB_ALPHA]: 4,
+/** Each colour type's channels, and the bit depths PNG allows it (PNG 3, 11.2.1). */
+const COLOR_TYPES: Record<number, { channels: number; depths: number[] }> = {
+	[GRAY]: { channels: 1, depths: [1, 2, 4, 8, 16] },
+	[RGB]: { channels: 3, depths: [8, 16] },
+	[PALETTE]: { channels: 1, depths: [1, 2, 4, 8] },
+	[GRAY_ALPHA]: { channels: 2, depths: [8, 16] },
+	[RGB_ALPHA]: { channels: 4, depths: [8, 16] },
 };
+
+/** A PNG foaie can't embed because its bytes are wrong: `problem` says how. */
+const broken = (problem: string): PdfError =>
+	new PdfError("image-invalid", `The PNG ${problem}. Save the image again.`);
 
 export async function readPng(
 	bytes: Uint8Array<ArrayBuffer>,
@@ -87,30 +92,48 @@ function chunks(bytes: Uint8Array<ArrayBuffer>) {
 	for (let at = 8; at + 8 <= bytes.length; ) {
 		const length = view.getUint32(at);
 		const type = String.fromCharCode(...bytes.subarray(at + 4, at + 8));
+		if (at + 12 + length > bytes.length)
+			throw broken(`ends inside its ${type} chunk: the file is truncated`);
 		const body = bytes.subarray(at + 8, at + 8 + length);
-		if (type === "IHDR") {
-			const colorType = view.getUint8(at + 17);
-			header = {
-				width: view.getUint32(at + 8),
-				height: view.getUint32(at + 12),
-				depth: view.getUint8(at + 16),
-				colorType,
-				channels: CHANNELS[colorType] ?? 0,
-				interlaced: view.getUint8(at + 20) === 1,
-			};
-		} else if (type === "PLTE") palette = body;
+		if (type === "IHDR") header = readHeader(view, at + 8);
+		else if (type === "PLTE") palette = body;
 		else if (type === "tRNS") transparency = body;
 		else if (type === "IDAT") data.push(body);
 		else if (type === "IEND") break;
 		at += 12 + length;
 	}
-	if (!header || header.channels === 0 || data.length === 0)
-		throw new PdfError(
-			"image-invalid",
-			"The PNG has no header or no image data foaie can read: check that the file isn't truncated.",
-		);
+	if (!header || data.length === 0)
+		throw broken("has no header or no image data: the file is truncated");
+	if (header.colorType === PALETTE && !isPalette(palette))
+		throw broken("indexes a palette it holds no PLTE chunk for");
 	return { header, palette, transparency, data: concat(data) };
 }
+
+function readHeader(view: DataView, at: number): Header {
+	const depth = view.getUint8(at + 8);
+	const colorType = view.getUint8(at + 9);
+	const type = COLOR_TYPES[colorType];
+	if (!type?.depths.includes(depth))
+		throw broken(
+			`has bit depth ${depth} with colour type ${colorType}, which PNG doesn't allow`,
+		);
+	const width = view.getUint32(at);
+	const height = view.getUint32(at + 4);
+	if (width === 0 || height === 0)
+		throw broken(`is ${width} × ${height} pixels, which PNG doesn't allow`);
+	return {
+		width,
+		height,
+		depth,
+		colorType,
+		channels: type.channels,
+		interlaced: view.getUint8(at + 12) === 1,
+	};
+}
+
+/** A PLTE chunk's body: one to 256 RGB entries. */
+const isPalette = (palette: Uint8Array) =>
+	palette.length >= 3 && palette.length <= 768 && palette.length % 3 === 0;
 
 /** The tRNS colour as a mask range: each channel's value twice. */
 function colorKey(transparency: Uint8Array, colors: number): string {

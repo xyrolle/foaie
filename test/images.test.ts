@@ -19,6 +19,25 @@ const pageWith = (picture: Image): Document => ({
 	],
 });
 
+/** Where the test PNG's header fields and its first image data sit: past the signature and IHDR's length and type. */
+const IHDR_HEIGHT = 8 + 8 + 7;
+const IHDR_DEPTH = 8 + 8 + 8;
+/** IDAT's data, past the signature, the 25 bytes of IHDR and IDAT's own length and type. */
+const IDAT_DATA = 8 + 25 + 8;
+
+const withByte = (bytes: Uint8Array, at: number, value: number) => {
+	const changed = bytes.slice();
+	changed[at] = value;
+	return changed;
+};
+
+/** A palette PNG whose PLTE chunk is renamed to an ancillary chunk a reader skips. */
+const withoutPalette = (bytes: Uint8Array) => {
+	const changed = bytes.slice();
+	changed.set(new TextEncoder().encode("pLTx"), 8 + 25 + 4);
+	return changed;
+};
+
 async function rejection(promise: Promise<unknown>): Promise<unknown> {
 	try {
 		await promise;
@@ -123,6 +142,34 @@ describe("image()", () => {
 		expect(
 			await rejection(image(png({ colorType: 2, depth: 8 }).subarray(0, 40))),
 		).toMatchObject({ code: "image-invalid" });
+	});
+
+	it.each([
+		["ends inside a chunk", png({ colorType: 2, depth: 8 }).subarray(0, -16)],
+		[
+			"has a depth its colour type can't have",
+			withByte(png({ colorType: 2, depth: 8 }), IHDR_DEPTH, 4),
+		],
+		[
+			"indexes a palette it doesn't hold",
+			withoutPalette(png({ colorType: 3, depth: 8 })),
+		],
+		[
+			"has no pixels",
+			withByte(png({ colorType: 2, depth: 8 }), IHDR_HEIGHT, 0),
+		],
+		[
+			"has less image data than its size",
+			withByte(png({ colorType: 6, depth: 8 }), IHDR_HEIGHT, 9),
+		],
+		[
+			"has image data that doesn't inflate",
+			withByte(png({ colorType: 6, depth: 8 }), IDAT_DATA + 2, 0xff),
+		],
+	])("reports a PNG that %s as broken", async (_, bytes) => {
+		expect(await rejection(image(bytes))).toMatchObject({
+			code: "image-invalid",
+		});
 	});
 });
 

@@ -190,6 +190,7 @@ type Sides<T> = { top: T; right: T; bottom: T; left: T };
   - **PNG**, when not interlaced, is embedded as its own compressed image data with PNG predictors, with no decoding. That covers grey, RGB and palette images, at 8 or 16 bits.
   - **Transparency** (an alpha channel or palette transparency) becomes a soft mask. That needs the data inflated once, through `DecompressionStream`, which is why `image()` is async.
   - **An interlaced PNG** throws `image-format`, and the message says to save it without interlacing.
+  - **A PNG whose bytes are wrong** throws `image-invalid`: a chunk that runs past the file's end, a bit depth its colour type can't have, a palette image without its palette, or, where it is decoded, image data that doesn't inflate or falls short of its size. An image embedded without decoding is checked no further: its data goes to the reader as it is.
 - **An image's default size is its pixels at 96 per inch,** the CSS pixel, scaled down to the content width when wider. Given one of `width` or `height`, the other keeps the aspect ratio.
 - **An image placed twice is written once.**
 
