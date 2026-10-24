@@ -42,6 +42,17 @@ const ALL_SIDES: Sides<boolean> = {
 };
 const DEFAULT_PADDING = { x: 4, y: 2 };
 
+/** The table's sides for a cell, with the ones its `border` sets. */
+const withBorder = (
+	sides: Sides<boolean>,
+	border: Partial<Sides<boolean>>,
+): Sides<boolean> => ({
+	top: border.top ?? sides.top,
+	right: border.right ?? sides.right,
+	bottom: border.bottom ?? sides.bottom,
+	left: border.left ?? sides.left,
+});
+
 /** A table's layout: its columns resolved, its rows laid out one at a time as they are placed. */
 export class TableLayout {
 	readonly #styles: Styles;
@@ -168,7 +179,7 @@ export class TableLayout {
 				lines,
 				align: own?.align,
 				fill: own?.fill,
-				sides: own?.border ? { ...sides, ...own.border } : sides,
+				sides: own?.border ? withBorder(sides, own.border) : sides,
 			});
 			height = Math.max(height, heightOf(lines) + 2 * padding.y);
 			column += span;
