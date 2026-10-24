@@ -309,6 +309,24 @@ describe("what foaie refuses", () => {
 			"table-too-wide",
 		],
 		[
+			"a size that isn't a number",
+			page([{ text: "x", size: Number.NaN }]),
+			"number-invalid",
+		],
+		[
+			"spacing that is infinite",
+			page([
+				{ text: "x" },
+				{ text: "y", spaceBefore: Number.POSITIVE_INFINITY },
+			]),
+			"number-invalid",
+		],
+		[
+			"an invalid creation date",
+			page([{ text: "x" }], { info: { created: new Date(Number.NaN) } }),
+			"number-invalid",
+		],
+		[
 			"margins that leave no room on the page",
 			page([{ text: "x" }], {
 				page: {

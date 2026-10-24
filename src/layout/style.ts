@@ -2,7 +2,7 @@
 // each one draws with.
 
 import type { Family, TextStyle } from "../document.ts";
-import { PdfError } from "../errors.ts";
+import { finite, PdfError } from "../errors.ts";
 import { type Font, trueTypeOf } from "../font/font.ts";
 import { GlyphSubset } from "../font/subset.ts";
 import type { TrueType } from "../font/truetype.ts";
@@ -63,7 +63,7 @@ export class Styles {
 		if (!style) {
 			const use = this.#use(this.#face(cascade));
 			const { face } = use;
-			const scale = cascade.size / face.unitsPerEm;
+			const scale = finite(cascade.size, "A style's size") / face.unitsPerEm;
 			style = {
 				use,
 				font: `/${use.resource} ${decimal(cascade.size)} Tf`,
@@ -73,7 +73,7 @@ export class Styles {
 				lineHeight:
 					(face.ascender - face.descender + face.lineGap) *
 					scale *
-					cascade.lineHeight,
+					finite(cascade.lineHeight, "A style's lineHeight"),
 			};
 			this.#styles.set(key, style);
 		}
@@ -158,7 +158,9 @@ export function rgb(hex: string): string {
 	return operands;
 }
 
-/** A number as a PDF operand: at most two decimals (a hundredth of a point), no exponent. */
+/** A number as a PDF operand: at most two decimals (a hundredth of a point). */
 export function decimal(value: number): string {
-	return String(Math.round(value * 100) / 100);
+	return String(
+		Math.round(finite(value, "A number in the document") * 100) / 100,
+	);
 }
