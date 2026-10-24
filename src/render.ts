@@ -70,7 +70,13 @@ export async function render(document: Document): Promise<Uint8Array> {
 			page.streams.push(stream);
 		}
 
-	const fonts = new Map(styles.uses.map((use) => [use, writer.reserve()]));
+	// A face a style resolved but no page drew with, such as a table's own face under bold cells, stays out.
+	const drawn = new Set(pages.flatMap((page) => [...page.content.fonts]));
+	const fonts = new Map(
+		styles.uses
+			.filter((use) => drawn.has(use))
+			.map((use) => [use, writer.reserve()]),
+	);
 	for (const [use, reference] of fonts) await writeFont(writer, use, reference);
 	const translucent = pages.some((page) => page.content.translucent);
 	const translucency = translucent ? writer.reserve() : undefined;
