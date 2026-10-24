@@ -2,8 +2,7 @@
 
 import type { Cell, Width } from "../document.ts";
 import { PdfError } from "../errors.ts";
-import { widthOf } from "../text/glyphs.ts";
-import type { Run } from "../text/lines.ts";
+import { naturalWidths } from "../text/lines.ts";
 import { runsOf } from "./paragraph.ts";
 import type { Cascade, Styles } from "./style.ts";
 
@@ -74,16 +73,11 @@ function measureColumn(
 		if (!cell || (typeof cell !== "string" && (cell.colSpan ?? 1) > 1))
 			continue;
 		const parts = cellParts(cell);
-		const runs = runsOf(
-			styles,
-			styles.cascade(cascade, parts),
-			parts.text,
-			undefined,
+		const natural = naturalWidths(
+			runsOf(styles, styles.cascade(cascade, parts), parts.text, undefined),
 		);
-		widest = Math.max(widest, widestLine(runs));
-		for (const run of runs)
-			for (const word of run.text.split(/[\s-]/))
-				longestWord = Math.max(longestWord, measure(run, word));
+		widest = Math.max(widest, natural.widest);
+		longestWord = Math.max(longestWord, natural.longestWord);
 	}
 	return {
 		widest: widest + 2 * paddingX,
@@ -101,23 +95,6 @@ export function cellAt(row: readonly Cell[], column: number): Cell | undefined {
 	}
 	return undefined;
 }
-
-function widestLine(runs: readonly Run[]): number {
-	let widest = 0;
-	let line = 0;
-	for (const run of runs) {
-		const [first = "", ...rest] = run.text.split("\n");
-		line += measure(run, first);
-		for (const next of rest) {
-			widest = Math.max(widest, line);
-			line = measure(run, next);
-		}
-	}
-	return Math.max(widest, line);
-}
-
-const measure = (run: Run, text: string) =>
-	widthOf(run.style.use.face, text, run.style.size);
 
 function tooWide(needed: number, available: number): PdfError {
 	return new PdfError(

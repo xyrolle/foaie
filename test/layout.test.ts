@@ -225,6 +225,18 @@ describe("what foaie refuses", () => {
 			"table-too-wide",
 		],
 		[
+			"an auto column narrower than a word its no-break spaces hold together",
+			page([
+				{
+					table: {
+						widths: [297, "auto"],
+						rows: [["Total", "1\u00a0234\u00a0567.89"]],
+					},
+				},
+			]),
+			"table-too-wide",
+		],
+		[
 			"a footer taller than its margin",
 			page([{ text: "x" }], {
 				footer: () => [{ text: "one\ntwo\nthree\nfour" }],

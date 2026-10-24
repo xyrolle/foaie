@@ -35,6 +35,25 @@ export function breakLines(runs: readonly Run[], width: number): Line[] {
 	return new LineBreaker(width, runs[0]?.style).run(runs);
 }
 
+/**
+ * How wide `runs` set with room to spare: their widest line, and their longest word, the narrowest
+ * width they break into without splitting a word. A table's `auto` column is sized by these.
+ */
+export function naturalWidths(runs: readonly Run[]): {
+	widest: number;
+	longestWord: number;
+} {
+	let widest = 0;
+	for (const line of breakLines(runs, Number.POSITIVE_INFINITY))
+		widest = Math.max(widest, line.width);
+	let longestWord = 0;
+	for (const run of runs)
+		for (const token of tokens(run.text))
+			if (token !== " " && token !== "\n")
+				longestWord = Math.max(longestWord, measure({ ...run, text: token }));
+	return { widest, longestWord };
+}
+
 class LineBreaker {
 	readonly #width: number;
 	readonly #lines: Line[] = [];
