@@ -66,7 +66,10 @@ describe("a subset", () => {
 		const subset = new GlyphSubset(face);
 		const text = "Ștefan Ἀθῆναι Ёлка";
 		for (const char of text)
-			subset.use(face.glyph(char.codePointAt(0) ?? 0), char.codePointAt(0));
+			subset.use(
+				face.glyph(char.codePointAt(0) ?? 0),
+				char.codePointAt(0) ?? 0,
+			);
 		const program = parsed(subset.program());
 		expect(program.glyphCount).toBe(subset.glyphs.length);
 		for (const [id, glyph] of subset.glyphs.entries())
@@ -76,9 +79,9 @@ describe("a subset", () => {
 	it("brings in the parts of the composite glyphs it draws", () => {
 		const face = parsed(roboto);
 		const composite = [..."ÁÉÍÓÚáéíóúĂăȘșȚț"]
-			.map((char) => face.glyph(char.codePointAt(0) ?? 0))
-			.find((glyph) => {
-				const outline = face.outline(glyph);
+			.map((char) => char.codePointAt(0) ?? 0)
+			.find((codePoint) => {
+				const outline = face.outline(face.glyph(codePoint));
 				return (
 					outline.length > 0 &&
 					new DataView(outline.buffer, outline.byteOffset).getInt16(0) < 0
@@ -86,7 +89,7 @@ describe("a subset", () => {
 			});
 		expect(composite).toBeDefined();
 		const subset = new GlyphSubset(face);
-		subset.use(composite ?? 0, undefined);
+		subset.use(face.glyph(composite ?? 0), composite ?? 0);
 		const before = subset.glyphs.length;
 		parsed(subset.program());
 		expect(subset.glyphs.length).toBeGreaterThan(before);

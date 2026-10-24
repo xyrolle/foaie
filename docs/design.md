@@ -131,6 +131,7 @@ type Sides<T> = { top: T; right: T; bottom: T; left: T };
 - **A subset keeps only the glyphs a document draws,** renumbered in order of use, together with the parts of any composite glyph. It keeps only the tables a PDF reader uses: `head`, `hhea`, `maxp`, `hmtx`, `loca` and `glyf`, plus `cvt`, `fpgm` and `prep` when present.
   - The prototype's one-page A5 document, with three faces, is 10.4 KB. pdfmake writes 11.7 KB, and jsPDF 26 KB.
 - **The font is embedded as a `CIDFontType2` with `Identity-H` encoding, its glyph widths and a `ToUnicode` map,** so its text can be copied, searched and extracted.
+  - A `ToUnicode` map gives each glyph one text. So two characters the face draws alike, such as ∆ and Δ in many fonts, or every character it lacks with its `.notdef`, each get their own copy of the glyph, and each extracts as written.
 - **The caller parses a font once.** `font()` takes 0.3–1 ms per face (measured), more than a whole one-page document. After that, a render only looks things up.
 
 ## Text
