@@ -53,10 +53,11 @@ describe("font()", () => {
 		});
 	});
 
-	it("reports a truncated file as broken", () => {
-		expect(errorOf(() => font(roboto.subarray(0, 2000)))).toMatchObject({
-			code: "font-invalid",
-		});
+	it("reports a truncated file as broken, wherever it ends", () => {
+		for (const end of [2000, roboto.length - 1000])
+			expect(errorOf(() => font(roboto.subarray(0, end)))).toMatchObject({
+				code: "font-invalid",
+			});
 	});
 });
 

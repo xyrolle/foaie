@@ -1,6 +1,8 @@
 // The container every TrueType font shares (OpenType's "sfnt"): a directory of tagged tables.
 // https://learn.microsoft.com/typography/opentype/spec/otff
 
+import { PdfError } from "../errors.ts";
+
 /** A table's place in the font's bytes. */
 export type TableRange = { offset: number; length: number };
 
@@ -25,10 +27,17 @@ export function readDirectory(
 	const tables = new Map<string, TableRange>();
 	for (let i = 0, count = view.getUint16(4); i < count; i++) {
 		const record = 12 + 16 * i;
-		tables.set(tagAt(view, record), {
+		const tag = tagAt(view, record);
+		const range = {
 			offset: view.getUint32(record + 8),
 			length: view.getUint32(record + 12),
-		});
+		};
+		if (range.offset + range.length > view.byteLength)
+			throw new PdfError(
+				"font-invalid",
+				`The font's bytes are broken: its ${tag.trim()} table runs past the end of the file. Check that the file isn't truncated.`,
+			);
+		tables.set(tag, range);
 	}
 	return tables;
 }
