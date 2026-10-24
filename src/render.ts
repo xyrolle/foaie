@@ -55,7 +55,7 @@ export async function render(document: Document): Promise<Uint8Array> {
 	await placeBlocks(layout, flow, document.content, cascade);
 	await finish(flow.page);
 
-	if (document.header || document.footer || document.watermark)
+	if (document.header || document.footer || document.watermark?.text)
 		for (const [index, page] of pages.entries()) {
 			await decorate(
 				layout,
@@ -72,7 +72,8 @@ export async function render(document: Document): Promise<Uint8Array> {
 
 	const fonts = new Map(styles.uses.map((use) => [use, writer.reserve()]));
 	for (const [use, reference] of fonts) await writeFont(writer, use, reference);
-	const translucency = document.watermark ? writer.reserve() : undefined;
+	const translucent = pages.some((page) => page.content.translucent);
+	const translucency = translucent ? writer.reserve() : undefined;
 	if (translucency)
 		writer.object(
 			translucency,

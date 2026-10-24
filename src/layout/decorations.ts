@@ -38,7 +38,8 @@ export async function decorate(
 			document.footer(at),
 			cascade,
 		);
-	if (document.watermark) watermark(layout, document.watermark, page, cascade);
+	if (document.watermark?.text)
+		watermark(layout, document.watermark, page, cascade);
 }
 
 /** The watermark's text, centred on the page and rotated. */
