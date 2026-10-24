@@ -52,6 +52,11 @@ describe("line breaking", () => {
 		]);
 	});
 
+	it("sets spaces in a row as one, and drops the spaces at a line's ends", () => {
+		expect(linesOf("  Total   due  ", 200)).toEqual(["Total due"]);
+		expect(linesOf("  Total   due  ", 30)).toEqual(["Total", "due"]);
+	});
+
 	it("breaks a word wider than the line between its characters", () => {
 		const lines = linesOf(
 			"Rindfleischetikettierungsüberwachungsaufgabenübertragungsgesetz",
