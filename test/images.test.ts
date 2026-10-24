@@ -83,6 +83,36 @@ describe("image()", () => {
 		expect(picture?.dictionary).toContain("/Mask [7 7]");
 	});
 
+	it.each([
+		["a lossless JPEG", 0xc3, 8],
+		["an arithmetic-coded JPEG", 0xc9, 8],
+		["a 12-bit JPEG", 0xc1, 12],
+	])(
+		"refuses %s, which PDF readers don't decode",
+		async (_, marker, precision) => {
+			// A start of image, then a frame header for one 16 × 16 grey component.
+			const frame = [
+				0xff,
+				marker,
+				0,
+				11,
+				precision,
+				0,
+				16,
+				0,
+				16,
+				1,
+				1,
+				0x11,
+				0,
+			];
+			const bytes = new Uint8Array([0xff, 0xd8, ...frame, 0xff, 0xd9]);
+			expect(await rejection(image(bytes))).toMatchObject({
+				code: "image-format",
+			});
+		},
+	);
+
 	it("refuses an interlaced PNG and other formats, and reports a truncated file", async () => {
 		expect(
 			await rejection(image(png({ colorType: 2, depth: 8, interlaced: true }))),

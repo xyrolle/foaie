@@ -24,6 +24,12 @@ export function readJpeg(bytes: Uint8Array<ArrayBuffer>): PdfImage {
 		const length = view.getUint16(at + 2);
 		if (marker === 0xee && isAdobe(view, at + 4)) adobe = true;
 		if (isFrameHeader(marker)) {
+			const precision = view.getUint8(at + 4);
+			if (!DECODED.includes(marker) || precision !== 8)
+				throw new PdfError(
+					"image-format",
+					"The JPEG is lossless, arithmetic-coded, hierarchical or more than 8 bits deep, which PDF readers don't decode. Save it as a baseline or progressive JPEG.",
+				);
 			const height = view.getUint16(at + 5);
 			const width = view.getUint16(at + 7);
 			const components = view.getUint8(at + 9);
@@ -46,6 +52,12 @@ export function readJpeg(bytes: Uint8Array<ArrayBuffer>): PdfImage {
 		"The JPEG has no frame header foaie can read: check that the file isn't truncated.",
 	);
 }
+
+/**
+ * The frames PDF readers decode, at 8 bits: baseline, extended and progressive, Huffman-coded
+ * (ISO 32000-1, 7.4.8). The other frames are lossless, hierarchical or arithmetic-coded.
+ */
+const DECODED = [0xc0, 0xc1, 0xc2];
 
 /** The start-of-frame markers, which hold the image's size: every SOFn but DHT, JPG and DAC. */
 function isFrameHeader(marker: number): boolean {
