@@ -1,8 +1,23 @@
 import { readFileSync } from "node:fs";
 import { inflateSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
-import { image, pdfImageOf } from "../src/image/image.ts";
+import { pdfImageOf } from "../src/image/image.ts";
+import { type Document, type Image, image, render } from "../src/index.ts";
 import { png } from "./png.ts";
+import { qpdfCheck, qpdfInstalled } from "./readers.ts";
+import { roboto } from "./roboto.ts";
+
+const family = roboto();
+const pageWith = (picture: Image): Document => ({
+	page: { size: "A5", margin: 36 },
+	fonts: { Roboto: family },
+	style: { font: "Roboto" },
+	content: [
+		{ text: "Above" },
+		{ image: picture, width: 120 },
+		{ text: "Below" },
+	],
+});
 
 async function rejection(promise: Promise<unknown>): Promise<unknown> {
 	try {
@@ -78,5 +93,33 @@ describe("image()", () => {
 		expect(
 			await rejection(image(png({ colorType: 2, depth: 8 }).subarray(0, 40))),
 		).toMatchObject({ code: "image-invalid" });
+	});
+});
+
+describe("a picture", () => {
+	it.each([
+		[
+			"a JPEG",
+			() => readFileSync(new URL("images/gradient.jpg", import.meta.url)),
+		],
+		["a transparent PNG", () => png({ colorType: 6, depth: 16 })],
+	])("with %s is a valid PDF", async (_, bytes) => {
+		const pdf = await render(pageWith(await image(bytes())));
+		if (qpdfInstalled)
+			expect(qpdfCheck(pdf)).toContain(
+				"No syntax or stream encoding errors found",
+			);
+		expect(new TextDecoder("latin1").decode(pdf)).toContain("/Subtype /Image");
+	});
+
+	it("is written once however often it is placed", async () => {
+		const picture = await image(png({ colorType: 2, depth: 8 }));
+		const pdf = await render({
+			...pageWith(picture),
+			content: [{ image: picture }, { image: picture }],
+		});
+		expect(
+			new TextDecoder("latin1").decode(pdf).match(/\/Subtype \/Image/g),
+		).toHaveLength(1);
 	});
 });
