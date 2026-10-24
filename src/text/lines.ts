@@ -47,11 +47,19 @@ export function naturalWidths(runs: readonly Run[]): {
 	let widest = 0;
 	for (const line of breakLines(runs, Number.POSITIVE_INFINITY))
 		widest = Math.max(widest, line.width);
+	// A word runs on across runs, up to a space, a line break, or the hyphen it may break after.
 	let longestWord = 0;
+	let word = 0;
 	for (const run of runs)
-		for (const token of tokens(run.text))
-			if (token !== " " && token !== "\n")
-				longestWord = Math.max(longestWord, measure({ ...run, text: token }));
+		for (const token of tokens(run.text)) {
+			if (token === " " || token === "\n") {
+				word = 0;
+				continue;
+			}
+			word += measure({ ...run, text: token });
+			longestWord = Math.max(longestWord, word);
+			if (token.endsWith("-")) word = 0;
+		}
 	return { widest, longestWord };
 }
 
@@ -64,6 +72,8 @@ class LineBreaker {
 	#used = 0;
 	/** The space waiting between the last word and the next: kept only if a word follows on this line. */
 	#space: Run | undefined;
+	/** The word being read: its text in each run it spans, with no break between them. */
+	#word: Run[] = [];
 	/** The style of an empty line, from the text around it. */
 	#style: Style | undefined;
 
@@ -76,30 +86,55 @@ class LineBreaker {
 		for (const run of runs) {
 			this.#style = run.style;
 			for (const token of tokens(run.text)) {
-				if (token === "\n") this.#endLine();
-				else if (token === " ")
+				if (token === "\n") {
+					this.#setWord();
+					this.#endLine();
+				} else if (token === " ") {
+					this.#setWord();
 					this.#space =
 						this.#pieces.length > 0 ? { ...run, text: " " } : undefined;
-				else this.#word({ ...run, text: token });
+				} else {
+					// A line may break after a hyphen: the word ends there.
+					if (this.#word.at(-1)?.text.endsWith("-")) this.#setWord();
+					this.#word.push({ ...run, text: token });
+				}
 			}
 		}
+		this.#setWord();
 		this.#endLine();
 		return this.#lines;
 	}
 
-	#word(word: Run): void {
+	/** Sets the word read so far after the waiting space, or on the next line when it doesn't fit. */
+	#setWord(): void {
+		const parts = this.#word;
+		if (parts.length === 0) return;
+		this.#word = [];
+		const widths = parts.map(measure);
+		const width = widths.reduce((sum, part) => sum + part, 0);
 		const space = this.#space ? measure(this.#space) : 0;
-		let width = measure(word);
 		if (this.#pieces.length > 0 && this.#used + space + width > this.#width)
 			this.#endLine();
-		if (this.#pieces.length === 0 && width > this.#width) {
-			word = this.#breakWord(word);
-			width = measure(word);
-		}
 		if (this.#space && this.#pieces.length > 0)
 			this.#append(this.#space, space);
 		this.#space = undefined;
-		this.#append(word, width);
+		for (const [i, part] of parts.entries()) {
+			const partWidth = widths[i] ?? 0;
+			if (width <= this.#width) this.#append(part, partWidth);
+			else this.#setPart(part, partWidth);
+		}
+	}
+
+	/** Sets a part of a word wider than a whole line: on the next line, or broken between characters. */
+	#setPart(part: Run, width: number): void {
+		if (this.#pieces.length > 0 && this.#used + width > this.#width)
+			this.#endLine();
+		if (this.#pieces.length > 0 || width <= this.#width) {
+			this.#append(part, width);
+			return;
+		}
+		const rest = this.#breakWord(part);
+		this.#append(rest, measure(rest));
 	}
 
 	/**
