@@ -1,7 +1,7 @@
 // A table set down the flow a row at a time: its header repeated on every page it continues on,
 // each row moved whole to the next page when it fits on one, and split between lines when it can't.
 
-import type { Cell, Sides, Table, TextStyle } from "../document.ts";
+import type { Cell, Table, TextStyle } from "../document.ts";
 import type { PdfError } from "../errors.ts";
 import { breakLines, type Line } from "../text/lines.ts";
 import { cellParts, checkSpans, columnWidths, spanOf } from "./columns.ts";
@@ -13,7 +13,9 @@ import {
 	type LaidCell,
 	type LaidRow,
 	type RowStyle,
+	rowSides,
 	splitRow,
+	withBorder,
 } from "./rows.ts";
 import type { Cascade, Style, Styles } from "./style.ts";
 
@@ -28,30 +30,7 @@ const STYLE_KEYS = [
 const setsStyle = (style: TextStyle) =>
 	STYLE_KEYS.some((key) => style[key] !== undefined);
 
-const NO_SIDES: Sides<boolean> = {
-	top: false,
-	right: false,
-	bottom: false,
-	left: false,
-};
-const ALL_SIDES: Sides<boolean> = {
-	top: true,
-	right: true,
-	bottom: true,
-	left: true,
-};
 const DEFAULT_PADDING = { x: 4, y: 2 };
-
-/** The table's sides for a cell, with the ones its `border` sets. */
-const withBorder = (
-	sides: Sides<boolean>,
-	border: Partial<Sides<boolean>>,
-): Sides<boolean> => ({
-	top: border.top ?? sides.top,
-	right: border.right ?? sides.right,
-	bottom: border.bottom ?? sides.bottom,
-	left: border.left ?? sides.left,
-});
 
 /** A table's layout: its columns resolved, its rows laid out one at a time as they are placed. */
 export class TableLayout {
@@ -153,13 +132,7 @@ export class TableLayout {
 
 	/** A row's cells laid out: lines broken to their columns, sides from the borders and the cell. */
 	#row(row: readonly Cell[], last: boolean): LaidRow {
-		const borders = this.#spec.borders;
-		const sides =
-			borders === "grid"
-				? ALL_SIDES
-				: borders === "rows"
-					? { ...NO_SIDES, bottom: !last }
-					: NO_SIDES;
+		const sides = rowSides(this.#spec.borders, last);
 		const { padding } = this.#rowStyle;
 		const cells: LaidCell[] = [];
 		let column = 0;
