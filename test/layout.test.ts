@@ -198,6 +198,15 @@ describe("headers and footers", () => {
 	});
 });
 
+describe("the watermark", () => {
+	it("draws nothing for empty text", async () => {
+		const pdf = await render(
+			page([{ text: "x" }], { watermark: { text: "" } }),
+		);
+		expect(new TextDecoder("latin1").decode(pdf)).not.toContain("/ExtGState");
+	});
+});
+
 describe("links and metadata", () => {
 	it("links a span's text to its URL, and writes the document's information and language", async () => {
 		const pdf = await render(
