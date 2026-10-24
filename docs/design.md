@@ -1,6 +1,6 @@
 # Design
 
-The library lays out a declarative document and writes it as a PDF. These are the decisions, each with its reason.
+foaie lays out a declarative document and writes it as a PDF. These are the decisions, each with its reason.
 
 ## Goals
 
@@ -33,6 +33,8 @@ The libraries those apps use today, measured on the same shapes:
 ## The API
 
 ```ts
+import { font, render } from "foaie";
+
 const sans = {
   normal: font(regularBytes), // parsed once, reused by every render
   bold: font(boldBytes),
@@ -220,7 +222,7 @@ type Sides<T> = { top: T; right: T; bottom: T; left: T };
   - opened by pdf.js, with its extracted text compared with the definition's text;
   - checked with `qpdf --check` where qpdf is installed;
   - rendered by pdf.js in Chromium and compared with a golden image within a small tolerance.
-- **The benchmark** (`bench/`) runs the library, pdfmake, jsPDF, pdfkit and pdf-lib on the reference shapes with one command:
+- **The benchmark** (`bench/`) runs foaie, pdfmake, jsPDF, pdfkit and pdf-lib on the reference shapes with one command:
   - in Node: CPU time and heap;
   - in workerd: time per render and the cold import.
 - **CI runs a performance smoke check with budgets about twice the targets.** It is noise-proof, and it catches slow creep.

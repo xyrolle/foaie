@@ -1,6 +1,6 @@
-# Contributor guide
+# foaie: contributor guide
 
-A small PDF writer for business documents: receipts, invoices, reports and long registers. A document is a plain data definition, and the output is PDF bytes. It has no dependencies and runs on the platform alone: Workers, Node, Bun, Deno and browsers.
+foaie is a small PDF writer for business documents: receipts, invoices, reports and long registers. A document is a plain data definition, and the output is PDF bytes. It has no dependencies and runs on the platform alone: Workers, Node, Bun, Deno and browsers.
 
 ## Design invariants
 - **A document is data.** One declarative definition goes in and the PDF's bytes come out. There is no drawing cursor, no builder state and no global state.

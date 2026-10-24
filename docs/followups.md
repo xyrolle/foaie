@@ -2,7 +2,6 @@
 
 Open work, each with what "done" means. Delete an entry in the change that resolves it.
 
-- **Pick the name.** Done when the package, the repository and the README carry the final name.
 - **Fallback faces.** A style names a list of families, and a character the first family lacks is drawn from the next one. Done when a mixed-script paragraph prints every character from the first family that has it.
 - **CFF outlines.** Done when an OpenType font with CFF outlines is subset and embedded as `FontFile3`, with the same text extraction as a TrueType one. Start only when a user has a font with no TTF build.
 - **Streamed output.** `render()` returns a `ReadableStream` that sends each page as it is laid out. The page count in footers would need a shared form XObject that is filled in at the end. Done when a 50,000-row table streams with flat memory.
