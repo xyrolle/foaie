@@ -186,7 +186,7 @@ type Sides<T> = { top: T; right: T; bottom: T; left: T };
 ## Images
 
 - **`image(bytes)` parses once and returns an `Image` to place.**
-  - **JPEG** is embedded as it is, compressed with DCT. That covers baseline and progressive, in grey, RGB and CMYK.
+  - **JPEG** is embedded as it is, compressed with DCT. That covers baseline and progressive, in grey, RGB and CMYK. A lossless, hierarchical, arithmetic-coded or 12-bit JPEG throws `image-format`: PDF's `DCTDecode` reads none of them.
   - **PNG**, when not interlaced, is embedded as its own compressed image data with PNG predictors, with no decoding. That covers grey, RGB and palette images, at 8 or 16 bits.
   - **Transparency** (an alpha channel or palette transparency) becomes a soft mask. That needs the data inflated once, through `DecompressionStream`, which is why `image()` is async.
   - **An interlaced PNG** throws `image-format`, and the message says to save it without interlacing.
