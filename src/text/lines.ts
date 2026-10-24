@@ -18,13 +18,16 @@ export type Line = {
 	height: number;
 };
 
+/** What keeps text from being set as it is: a line break, or spaces to set as one or to drop. */
+const UNSET = /\n|^ | $| {2}/;
+
 /**
  * The lines of `runs` within `width` points. A paragraph that is all one style and fits on one line
- * takes the short path.
+ * as it is takes the short path.
  */
 export function breakLines(runs: readonly Run[], width: number): Line[] {
 	const only = runs.length === 1 ? runs[0] : undefined;
-	if (only && !only.text.includes("\n")) {
+	if (only && !UNSET.test(only.text)) {
 		const textWidth = widthOf(only.style.use.face, only.text, only.style.size);
 		if (textWidth <= width)
 			return [lineOf([{ ...only, width: textWidth }], only.style)];
