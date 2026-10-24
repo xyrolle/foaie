@@ -13,21 +13,38 @@ export class GlyphSubset {
 	readonly glyphs: number[] = [0];
 	/** The code point each subset glyph draws, for the ToUnicode map; none for a composite's part. */
 	readonly codePoints: (number | undefined)[] = [undefined];
-	readonly #ids = new Map<number, number>([[0, 0]]);
+	/**
+	 * A subset glyph for each character drawn. Characters the face draws with one glyph, such as
+	 * every character it lacks with its .notdef, get a copy each, so each maps back to its own text.
+	 */
+	readonly #characters = new Map<number, number>();
+	/** The first subset glyph of each face glyph, which a composite's parts reuse. */
+	readonly #glyphs = new Map<number, number>([[0, 0]]);
 
 	constructor(face: TrueType) {
 		this.face = face;
 	}
 
-	/** The subset's number for a face glyph, adding it on first use. */
-	use(glyph: number, codePoint: number | undefined): number {
-		let id = this.#ids.get(glyph);
+	/** The subset's number for the face glyph drawn for `codePoint`, adding it on first use. */
+	use(glyph: number, codePoint: number): number {
+		let id = this.#characters.get(codePoint);
 		if (id === undefined) {
-			id = this.glyphs.length;
-			this.#ids.set(glyph, id);
-			this.glyphs.push(glyph);
-			this.codePoints.push(codePoint);
+			id = this.#add(glyph, codePoint);
+			this.#characters.set(codePoint, id);
 		}
+		return id;
+	}
+
+	/** The subset's number for a glyph a composite glyph is made of, adding it on first use. */
+	#part(glyph: number): number {
+		return this.#glyphs.get(glyph) ?? this.#add(glyph, undefined);
+	}
+
+	#add(glyph: number, codePoint: number | undefined): number {
+		const id = this.glyphs.length;
+		this.glyphs.push(glyph);
+		this.codePoints.push(codePoint);
+		if (!this.#glyphs.has(glyph)) this.#glyphs.set(glyph, id);
 		return id;
 	}
 
@@ -95,7 +112,7 @@ export class GlyphSubset {
 		let flags: number;
 		do {
 			flags = view.getUint16(at);
-			view.setUint16(at + 2, this.use(view.getUint16(at + 2), undefined));
+			view.setUint16(at + 2, this.#part(view.getUint16(at + 2)));
 			at += 4 + (flags & ARGS_ARE_WORDS ? 4 : 2);
 			if (flags & HAS_SCALE) at += 2;
 			else if (flags & HAS_X_AND_Y_SCALE) at += 4;
