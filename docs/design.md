@@ -145,6 +145,7 @@ type Sides<T> = { top: T; right: T; bottom: T; left: T };
 - **Line breaking:**
   - a line breaks at spaces and after hyphens;
   - a no-break space holds its words together;
+  - spaces in a row set as one, and a line drops the spaces at its ends, as HTML does;
   - `\n` starts a new line;
   - a word wider than the line breaks between characters, which is also how a CJK paragraph breaks.
 
@@ -201,9 +202,12 @@ type Sides<T> = { top: T; right: T; bottom: T; left: T };
   - A subset's tag is derived from its face and its glyph set.
   - Nothing reads a clock: a creation date is written only from `info.created`.
 - **Content streams, font programs, `ToUnicode` maps and image masks are compressed with the platform's `CompressionStream`.** It is native code, and it adds nothing to the bundle.
+  - A stream under 1 KB is written as it is. Each compression costs a round trip through the stream machinery, about 0.15–0.4 ms in Node, which is more than it saves on a footer of a few hundred bytes.
 - **Memory is bounded by the page.**
-  - A page's content is joined into one string as soon as the page is laid out, compressed, and only its compressed bytes are kept. Fonts and the cross-reference table are written at the end.
-  - Joining the strings matters: V8 keeps many small strings concatenated as ropes. In the prototype, joining each finished page took the 5,000-row table from 135 MB to 47 MB of heap and halved its CPU time.
+  - A page's content is joined into one string as soon as the page is laid out. It compresses while the next pages are laid out, and only its compressed bytes are kept.
+  - At most 8 pages compress at once, and the objects are written in the order they were given, whatever order they finish compressing in. So the bytes stay the same from run to run.
+  - Fonts and the cross-reference table are written at the end.
+  - Joining the strings matters: V8 keeps many small strings concatenated as ropes. In the prototype, joining each finished page took the 5,000-row table from 135 MB to 47 MB of heap and halved its CPU time. Compressing each page as it finishes takes the table under 24 MB.
 - **`render()` returns the whole file.**
   - A streamed variant is a follow-up. No user needs one at 5,000 rows.
   - A footer that prints the page count needs that count before its page can be written.

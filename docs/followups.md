@@ -11,3 +11,5 @@ Open work, each with what "done" means. Delete an entry in the change that resol
 - **CMYK colours.** Done when a colour can be given as CMYK and is written as `DeviceCMYK`.
 - **Blocks inside table cells.** A cell holds a stack of blocks, not only text. Done when a cell can hold an image and two paragraphs.
 - **Forced page breaks.** Done when a block can start a new page.
+- **Trim the core towards 6 KB.** It is about 11.5 KB min+gzip, against the prototype's 6.4 KB. Images, decorations, links, the keep rules and the errors' messages came after the prototype. Done when the core of `render` and `font` is under 8 KB min+gzip with no loss of readability, or a measurement shows what each kilobyte buys.
+- **Run the suite on Bun and Deno.** The library uses only APIs both have, but neither runs the tests yet. Done when CI runs the conformance tests on Node, Bun, Deno and workerd.
