@@ -58,6 +58,8 @@ class LineBreaker {
 	readonly #width: number;
 	readonly #lines: Line[] = [];
 	#pieces: Piece[] = [];
+	/** The pieces that joined several words or runs: measured whole at the line's end, kerning across them included. */
+	readonly #joined = new Set<Piece>();
 	#used = 0;
 	/** The space waiting between the last word and the next: kept only if a word follows on this line. */
 	#space: Run | undefined;
@@ -112,14 +114,14 @@ class LineBreaker {
 		if (last && last.style === run.style && last.link === run.link) {
 			last.text += run.text;
 			last.width += width;
+			this.#joined.add(last);
 		} else this.#pieces.push({ ...run, width });
 		this.#used += width;
 	}
 
 	#endLine(): void {
-		// A piece that joined several words is measured whole, so kerning across them counts.
-		for (const piece of this.#pieces)
-			if (piece.text.includes(" ")) piece.width = measure(piece);
+		for (const piece of this.#joined) piece.width = measure(piece);
+		this.#joined.clear();
 		const style = this.#pieces[0]?.style ?? this.#style;
 		if (style) this.#lines.push(lineOf(this.#pieces, style));
 		this.#pieces = [];

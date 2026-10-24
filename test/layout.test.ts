@@ -2,6 +2,7 @@ import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 import { describe, expect, it } from "vitest";
 import { type Block, type Document, PdfError, render } from "../src/index.ts";
 import { defaultCascade, Styles } from "../src/layout/style.ts";
+import { widthOf } from "../src/text/glyphs.ts";
 import { breakLines } from "../src/text/lines.ts";
 import { pageTexts } from "./readers.ts";
 import { roboto } from "./roboto.ts";
@@ -63,6 +64,20 @@ describe("line breaking", () => {
 			"three",
 			"four",
 		]);
+	});
+
+	it("measures a line as it draws, kerning between the runs it joins included", () => {
+		const style = new Styles({ Roboto: family }).style(
+			defaultCascade({ font: "Roboto", size: 10 }),
+		);
+		const [line] = breakLines(
+			[
+				{ text: "A", style, link: undefined },
+				{ text: "V", style, link: undefined },
+			],
+			200,
+		);
+		expect(line?.width).toBe(widthOf(style.use.face, "AV", 10));
 	});
 
 	it("breaks a word wider than the line between its characters", () => {
