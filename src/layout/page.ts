@@ -4,13 +4,13 @@
 import { show } from "../text/glyphs.ts";
 import type { Line } from "../text/lines.ts";
 import type { FaceUse, Style } from "./style.ts";
-import { decimal as d, rgb } from "./style.ts";
+import { decimal as d } from "./style.ts";
 
 const BLACK = "0 0 0";
 
-/** The operators that set a line's width and colour, made once for every line drawn alike. */
+/** The operators that set a line's width and colour (as its operands), made once for every line drawn alike. */
 export const stroke = (width: number, color: string): string =>
-	`${d(width)} w ${rgb(color)} RG`;
+	`${d(width)} w ${color} RG`;
 
 /** A link's area on the page, in PDF coordinates: left, bottom, right, top. */
 export type LinkArea = { url: string; rect: [number, number, number, number] };
@@ -68,7 +68,7 @@ export class PageContent {
 		this.#operators.push(`${operators} ET`);
 	}
 
-	/** Fills a rectangle whose top-left corner is at `x`, `top`. */
+	/** Fills a rectangle whose top-left corner is at `x`, `top`, in a colour's operands. */
 	fill(
 		x: number,
 		top: number,
@@ -76,9 +76,8 @@ export class PageContent {
 		height: number,
 		color: string,
 	): void {
-		const operands = rgb(color);
-		const set = operands === this.#fill ? "" : `${operands} rg `;
-		this.#fill = operands;
+		const set = color === this.#fill ? "" : `${color} rg `;
+		this.#fill = color;
 		this.#operators.push(
 			`${set}${d(x)} ${d(this.height - top - height)} ${d(width)} ${d(height)} re f`,
 		);

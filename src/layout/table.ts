@@ -81,7 +81,7 @@ export class TableLayout {
 				typeof padding === "number" ? { x: padding, y: padding } : padding,
 			stroke: stroke(
 				this.#spec.borderWidth ?? 0.5,
-				this.#spec.borderColor ?? "#000",
+				styles.color(this.#spec.borderColor ?? "#000"),
 			),
 		};
 		const header = this.#spec.header ?? [];
@@ -178,7 +178,8 @@ export class TableLayout {
 				width,
 				lines,
 				align: own?.align,
-				fill: own?.fill,
+				fill:
+					own?.fill === undefined ? undefined : this.#styles.color(own.fill),
 				sides: own?.border ? withBorder(sides, own.border) : sides,
 			});
 			height = Math.max(height, heightOf(lines) + 2 * padding.y);

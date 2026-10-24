@@ -11,6 +11,7 @@ export type LaidCell = {
 	width: number;
 	lines: Line[];
 	align: Align | undefined;
+	/** The fill's colour, as its operands. */
 	fill: string | undefined;
 	sides: Sides<boolean>;
 };
