@@ -13,3 +13,5 @@ Open work, each with what "done" means. Delete an entry in the change that resol
 - **Forced page breaks.** Done when a block can start a new page.
 - **Trim the core towards 6 KB.** It is about 11.5 KB min+gzip, against the prototype's 6.4 KB. Images, decorations, links, the keep rules and the errors' messages came after the prototype. Done when the core of `render` and `font` is under 8 KB min+gzip with no loss of readability, or a measurement shows what each kilobyte buys.
 - **Run the suite on Bun and Deno.** The library uses only APIs both have, but neither runs the tests yet. Done when CI runs the conformance tests on Node, Bun, Deno and workerd.
+- **JPEG orientation.** A photo with an EXIF orientation is drawn as it is stored, often sideways, where a browser turns it upright. Done when `image()` reads the orientation and a picture is drawn as a browser shows it.
+- **Soft hyphens.** U+00AD prints as the face draws it, usually a visible hyphen, and the line breaker never breaks there. Done when a soft hyphen is invisible within a line and becomes a hyphen where a line breaks at it.
