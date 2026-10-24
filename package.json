@@ -1,0 +1,42 @@
+{
+	"name": "foaie",
+	"version": "0.0.0",
+	"description": "A small PDF writer for business documents, with no dependencies, for Workers, Node, Bun, Deno and browsers.",
+	"keywords": [
+		"pdf",
+		"pdf-generation",
+		"cloudflare-workers",
+		"edge"
+	],
+	"license": "MIT",
+	"author": "Serghei",
+	"type": "module",
+	"sideEffects": false,
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"packageManager": "pnpm@12.15.0",
+	"engines": {
+		"node": ">=20"
+	},
+	"scripts": {
+		"build": "tsc -p tsconfig.build.json",
+		"prepack": "pnpm build",
+		"check": "biome check .",
+		"typecheck": "tsc",
+		"test": "vitest run"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.6.3",
+		"@types/node": "24.19.2",
+		"pdfjs-dist": "6.4.299",
+		"typescript": "7.0.2",
+		"vitest": "5.0.5"
+	}
+}
