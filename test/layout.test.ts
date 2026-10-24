@@ -31,6 +31,26 @@ function linesOf(text: string, width: number): string[] {
 	);
 }
 
+/**
+ * A one-row table below two header rows of one and two lines, whose heights add up differently one
+ * at a time than all at once. The row's one line is `size` points: 394 fits the room left, 395 doesn't.
+ */
+const belowUnevenHeader = (size: number): Document => ({
+	...page([
+		{
+			table: {
+				widths: ["*"],
+				header: [["Header"], ["Header\nHeader"]],
+				rows: [[{ text: "I", size }]],
+			},
+		},
+	]),
+	page: { size: "A5", margin: 20 },
+	style: { font: "Roboto", size: 9, lineHeight: 1.1 },
+});
+const FITS_BELOW_HEADER = 394;
+const TOO_TALL_BELOW_HEADER = 395;
+
 /** A block as data from outside might hold it, naming two kinds at once. */
 const twoKinds: Block = JSON.parse('{ "text": "x", "stack": [] }');
 
@@ -152,6 +172,14 @@ describe("page breaking", () => {
 		expect(pages.length).toBeGreaterThan(1);
 		for (const text of pages) expect(text).toMatch(/^Header/);
 		expect(pages.join("\n")).toContain("line 80");
+	});
+
+	it("sets a row that just fits below a header of uneven rows on the header's page", async () => {
+		const pages = await pageTexts(
+			await render(belowUnevenHeader(FITS_BELOW_HEADER)),
+		);
+		expect(pages).toHaveLength(1);
+		expect(pages[0]).toMatch(/I$/);
 	});
 
 	it("keeps a heading with the table after it", async () => {
@@ -394,6 +422,11 @@ describe("what foaie refuses", () => {
 					},
 				},
 			]),
+			"page-too-small",
+		],
+		[
+			"a row whose line can't fit below a header of uneven rows",
+			belowUnevenHeader(TOO_TALL_BELOW_HEADER),
 			"page-too-small",
 		],
 		[

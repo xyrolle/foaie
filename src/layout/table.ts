@@ -110,6 +110,8 @@ export class TableLayout {
 		// A first row taller than a page starts at the top of one, and splits there.
 		await flow.fit(Math.min(this.startHeight(), flow.pageHeight));
 		if (headerHeight > flow.room) throw noRoomForRows(headerHeight, flow);
+		/** Whether the page holds nothing yet but this table's header: moving on wouldn't help. */
+		let headerAlone = flow.atTop;
 		header.forEach(draw);
 		const rows = this.#spec.rows;
 		for (let i = 0; i < rows.length; i++) {
@@ -120,13 +122,14 @@ export class TableLayout {
 					? [undefined, row]
 					: splitRow(row, flow.room, this.#rowStyle);
 				if (part) draw(part);
-				else if (flow.y === flow.area.top + headerHeight)
-					throw noRoomForRows(headerHeight, flow);
+				else if (headerAlone) throw noRoomForRows(headerHeight, flow);
 				await flow.newPage();
 				header.forEach(draw);
+				headerAlone = true;
 				row = rest;
 			}
 			draw(row);
+			headerAlone = false;
 		}
 	}
 
