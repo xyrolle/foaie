@@ -3,7 +3,7 @@
 
 import type { Cell, Sides, Table, TextStyle } from "../document.ts";
 import { breakLines, type Line } from "../text/lines.ts";
-import { cellParts, columnWidths } from "./columns.ts";
+import { cellParts, checkSpans, columnWidths, spanOf } from "./columns.ts";
 import type { Flow } from "./flow.ts";
 import { stroke } from "./page.ts";
 import { heightOf, runsOf } from "./paragraph.ts";
@@ -72,12 +72,13 @@ export class TableLayout {
 				this.#spec.borderColor ?? "#000",
 			),
 		};
-		const rows = [...(this.#spec.header ?? []), ...this.#spec.rows];
+		const header = this.#spec.header ?? [];
+		checkSpans(header, this.#spec.rows, this.#spec.widths.length);
 		this.#widths = columnWidths(
 			styles,
 			this.#cascade,
 			this.#spec.widths,
-			rows,
+			[...header, ...this.#spec.rows],
 			this.#rowStyle.padding.x,
 			width,
 		);
@@ -153,7 +154,7 @@ export class TableLayout {
 		let uniform = true;
 		for (const cell of row) {
 			const own = typeof cell === "string" ? undefined : cell;
-			const span = own?.colSpan ?? 1;
+			const span = spanOf(cell);
 			let width = 0;
 			for (let k = 0; k < span; k++) width += this.#widths[column + k] ?? 0;
 			const lines = this.#lines(cell, width - 2 * padding.x);
