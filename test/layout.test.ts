@@ -1,6 +1,12 @@
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 import { describe, expect, it } from "vitest";
-import { type Block, type Document, PdfError, render } from "../src/index.ts";
+import {
+	type Block,
+	type Cell,
+	type Document,
+	PdfError,
+	render,
+} from "../src/index.ts";
 import { defaultCascade, Styles } from "../src/layout/style.ts";
 import { widthOf } from "../src/text/glyphs.ts";
 import { breakLines } from "../src/text/lines.ts";
@@ -152,6 +158,23 @@ describe("page breaking", () => {
 		};
 		const pages = await pageTexts(await render(page([...filler, signature])));
 		expect(pages[1]).toMatch(/^Signed\s*Name\s*Date/);
+	});
+});
+
+describe("table borders", () => {
+	/** The lines a one-cell grid table strokes, read from its page's content. */
+	async function strokes(cell: Cell): Promise<number> {
+		const pdf = await render(
+			page([{ table: { widths: ["*"], borders: "grid", rows: [[cell]] } }]),
+		);
+		return new TextDecoder("latin1").decode(pdf).match(/ l S/g)?.length ?? 0;
+	}
+
+	it("draws the sides a cell turns off or on, and the table's for a side it leaves undefined", async () => {
+		expect(await strokes("x")).toBe(4);
+		expect(await strokes({ text: "x", border: { top: false } })).toBe(3);
+		const unsaid = Object.fromEntries([["top", undefined]]);
+		expect(await strokes({ text: "x", border: unsaid })).toBe(4);
 	});
 });
 
