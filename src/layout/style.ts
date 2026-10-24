@@ -39,6 +39,7 @@ export class Styles {
 	readonly #fonts: Readonly<Record<string, Family>>;
 	readonly #uses = new Map<TrueType, FaceUse>();
 	readonly #styles = new Map<string, Style>();
+	readonly #colors = new Map<string, string>();
 
 	constructor(fonts: Readonly<Record<string, Family>>) {
 		this.#fonts = fonts;
@@ -68,7 +69,7 @@ export class Styles {
 				use,
 				font: `/${use.resource} ${decimal(cascade.size)} Tf`,
 				size: cascade.size,
-				color: rgb(cascade.color),
+				color: this.color(cascade.color),
 				ascent: face.ascender * scale,
 				lineHeight:
 					(face.ascender - face.descender + face.lineGap) *
@@ -78,6 +79,16 @@ export class Styles {
 			this.#styles.set(key, style);
 		}
 		return style;
+	}
+
+	/** A colour as the operands PDF's colour operators take, read once per document. */
+	color(hex: string): string {
+		let operands = this.#colors.get(hex);
+		if (operands === undefined) {
+			operands = rgb(hex);
+			this.#colors.set(hex, operands);
+		}
+		return operands;
 	}
 
 	#face({ font, bold, italic }: Cascade): TrueType {
@@ -135,27 +146,20 @@ export const defaultCascade = (
 	lineHeight: style.lineHeight ?? 1,
 });
 
-const colors = new Map<string, string>();
-
 /** `#rgb` or `#rrggbb` as the three numbers PDF's colour operators take. */
-export function rgb(hex: string): string {
-	let operands = colors.get(hex);
-	if (operands === undefined) {
-		const digits = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex)?.[1];
-		if (!digits)
-			throw new PdfError(
-				"color-invalid",
-				`"${hex}" isn't a colour foaie reads. Write it as #rgb or #rrggbb.`,
-			);
-		const full =
-			digits.length === 3 ? [...digits].map((d) => d + d).join("") : digits;
-		const value = Number.parseInt(full, 16);
-		operands = [value >> 16, (value >> 8) & 0xff, value & 0xff]
-			.map((channel) => decimal(channel / 255))
-			.join(" ");
-		colors.set(hex, operands);
-	}
-	return operands;
+function rgb(hex: string): string {
+	const digits = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex)?.[1];
+	if (!digits)
+		throw new PdfError(
+			"color-invalid",
+			`"${hex}" isn't a colour foaie reads. Write it as #rgb or #rrggbb.`,
+		);
+	const full =
+		digits.length === 3 ? [...digits].map((d) => d + d).join("") : digits;
+	const value = Number.parseInt(full, 16);
+	return [value >> 16, (value >> 8) & 0xff, value & 0xff]
+		.map((channel) => decimal(channel / 255))
+		.join(" ");
 }
 
 /** A number as a PDF operand: at most two decimals (a hundredth of a point). */
