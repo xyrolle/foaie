@@ -2,7 +2,7 @@
 // no-break space, and between characters only for a word wider than the line.
 
 import type { Style } from "../layout/style.ts";
-import { widthOf } from "./glyphs.ts";
+import { fittingLength, widthOf } from "./glyphs.ts";
 
 /** Text in one style, as a paragraph or a cell is made of. */
 export type Run = { text: string; style: Style; link: string | undefined };
@@ -91,22 +91,34 @@ class LineBreaker {
 		let width = measure(word);
 		if (this.#pieces.length > 0 && this.#used + space + width > this.#width)
 			this.#endLine();
-		// A word wider than a whole line breaks between its characters.
-		while (
-			this.#pieces.length === 0 &&
-			width > this.#width &&
-			[...word.text].length > 1
-		) {
-			const fit = longestFit(word, this.#width);
-			this.#append(fit, measure(fit));
-			this.#endLine();
-			word = { ...word, text: word.text.slice(fit.text.length) };
+		if (this.#pieces.length === 0 && width > this.#width) {
+			word = this.#breakWord(word);
 			width = measure(word);
 		}
 		if (this.#space && this.#pieces.length > 0)
 			this.#append(this.#space, space);
 		this.#space = undefined;
 		this.#append(word, width);
+	}
+
+	/**
+	 * Sets the full lines a word wider than the line breaks into, between its characters, and
+	 * returns the part left for the next line.
+	 */
+	#breakWord(word: Run): Run {
+		const { face } = word.style.use;
+		const fitting = (text: string) =>
+			fittingLength(face, text, word.style.size, this.#width);
+		let rest = word.text;
+		let length = fitting(rest);
+		while (length < rest.length) {
+			const part = { ...word, text: rest.slice(0, length) };
+			this.#append(part, measure(part));
+			this.#endLine();
+			rest = rest.slice(length);
+			length = fitting(rest);
+		}
+		return { ...word, text: rest };
 	}
 
 	#append(run: Run, width: number): void {
@@ -169,16 +181,4 @@ function* tokens(text: string): Generator<string> {
 		}
 	}
 	if (start < text.length) yield text.slice(start);
-}
-
-/** The longest start of `word` that fits `width`, at least one character. */
-function longestFit(word: Run, width: number): Run {
-	const characters = [...word.text];
-	let count = characters.length - 1;
-	while (
-		count > 1 &&
-		measure({ ...word, text: characters.slice(0, count).join("") }) > width
-	)
-		count--;
-	return { ...word, text: characters.slice(0, count).join("") };
 }
