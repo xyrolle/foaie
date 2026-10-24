@@ -80,15 +80,20 @@ describe("line breaking", () => {
 		expect(line?.width).toBe(widthOf(style.use.face, "AV", 10));
 	});
 
-	it("breaks a word wider than the line between its characters", () => {
-		const lines = linesOf(
-			"Rindfleischetikettierungsüberwachungsaufgabenübertragungsgesetz",
-			100,
-		);
+	it("breaks a word wider than the line between its characters, filling each line", () => {
+		const word =
+			"Rindfleischetikettierungsüberwachungsaufgabenübertragungsgesetz";
+		const lines = linesOf(word, 100);
 		expect(lines.length).toBeGreaterThan(1);
-		expect(lines.join("")).toBe(
-			"Rindfleischetikettierungsüberwachungsaufgabenübertragungsgesetz",
-		);
+		expect(lines.join("")).toBe(word);
+		const face = new Styles({ Roboto: family }).style(
+			defaultCascade({ font: "Roboto", size: 10 }),
+		).use.face;
+		for (const [i, line] of lines.slice(0, -1).entries()) {
+			const nextCharacter = lines[i + 1]?.charAt(0) ?? "";
+			expect(widthOf(face, line, 10)).toBeLessThanOrEqual(100);
+			expect(widthOf(face, line + nextCharacter, 10)).toBeGreaterThan(100);
+		}
 	});
 });
 

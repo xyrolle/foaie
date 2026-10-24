@@ -30,6 +30,28 @@ export function widthOf(face: TrueType, text: string, size: number): number {
 	return (advance(face, text) * size) / face.unitsPerEm;
 }
 
+/** How much of `text`, in UTF-16 units, fits `width` points at `size`: always its first character. */
+export function fittingLength(
+	face: TrueType,
+	text: string,
+	size: number,
+	width: number,
+): number {
+	const room = (width * face.unitsPerEm) / size;
+	let used = 0;
+	let previous = -1;
+	for (let i = 0; i < text.length; ) {
+		const codePoint = text.codePointAt(i) ?? 0;
+		const glyph = face.glyph(codePoint);
+		used += face.advances[glyph] ?? 0;
+		if (previous >= 0) used += face.kerning(previous, glyph);
+		if (used > room && i > 0) return i;
+		i += codePoint > BMP_END ? 2 : 1;
+		previous = glyph;
+	}
+	return text.length;
+}
+
 /**
  * `text` as a TJ operand: two-byte subset glyph numbers in hex, with kerning between them as
  * thousandths of the text size (ISO 32000-1, 9.4.3).
