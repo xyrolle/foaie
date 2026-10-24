@@ -375,4 +375,11 @@ describe("what foaie refuses", () => {
 		expect(error).toBeInstanceOf(PdfError);
 		expect(error).toMatchObject({ code });
 	});
+
+	it("names a block's kinds in its error", async () => {
+		expect(await errorOf(page([twoKinds]))).toMatchObject({
+			message:
+				"A block has text and stack. Give it exactly one of text, table, image and stack.",
+		});
+	});
 });

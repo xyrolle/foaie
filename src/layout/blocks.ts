@@ -29,7 +29,7 @@ function checkKind(block: Block): void {
 	if (kinds.length !== 1)
 		throw new PdfError(
 			"block-invalid",
-			`A block has ${kinds.length === 0 ? "none" : `all of ${kinds.join(", ")}`} of the keys text, table, image and stack. Give it exactly one.`,
+			`A block has ${kinds.length === 0 ? "none of these keys" : kinds.join(" and ")}. Give it exactly one of text, table, image and stack.`,
 		);
 }
 
