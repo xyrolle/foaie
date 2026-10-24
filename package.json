@@ -30,7 +30,8 @@
 		"prepack": "pnpm build",
 		"check": "biome check .",
 		"typecheck": "tsc",
-		"test": "vitest run"
+		"test": "vitest run",
+		"test:performance": "node scripts/performance.ts"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.6.3",
