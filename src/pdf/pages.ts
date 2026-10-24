@@ -7,6 +7,15 @@ import type { FaceUse } from "../layout/style.ts";
 import { decimal as d } from "../layout/style.ts";
 import { type PdfWriter, pdfDate, textString, uriString } from "./writer.ts";
 
+/** The texts of the information dictionary, by their keys in a definition (ISO 32000-1, 14.3.3). */
+const INFO_TEXTS = [
+	["title", "Title"],
+	["author", "Author"],
+	["subject", "Subject"],
+	["keywords", "Keywords"],
+	["creator", "Creator"],
+] as const;
+
 /** A page once its content is written: what it drew, and its content streams. */
 export type WrittenPage = { content: PageContent; streams: number[] };
 
@@ -79,14 +88,16 @@ export function writeCatalog(
 	const catalog = writer.reserve();
 	const lang = document.lang ? ` /Lang ${textString(document.lang)}` : "";
 	writer.object(catalog, `<< /Type /Catalog /Pages ${tree} 0 R${lang} >>`);
-	if (!document.info) return `/Root ${catalog} 0 R`;
-	const { created, ...texts } = document.info;
-	const entries = Object.entries(texts).map(
-		([key, value]) =>
-			`/${key.charAt(0).toUpperCase()}${key.slice(1)} ${textString(value)}`,
-	);
-	if (created) entries.push(`/CreationDate ${pdfDate(created)}`);
-	const info = writer.reserve();
-	writer.object(info, `<< ${entries.join(" ")} >>`);
-	return `/Root ${catalog} 0 R /Info ${info} 0 R`;
+	const root = `/Root ${catalog} 0 R`;
+	const { info = {} } = document;
+	const entries: string[] = [];
+	for (const [key, name] of INFO_TEXTS) {
+		const value = info[key];
+		if (value !== undefined) entries.push(`/${name} ${textString(value)}`);
+	}
+	if (info.created) entries.push(`/CreationDate ${pdfDate(info.created)}`);
+	if (entries.length === 0) return root;
+	const dictionary = writer.reserve();
+	writer.object(dictionary, `<< ${entries.join(" ")} >>`);
+	return `${root} /Info ${dictionary} 0 R`;
 }

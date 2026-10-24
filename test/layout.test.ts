@@ -216,6 +216,20 @@ describe("links and metadata", () => {
 			Language: "ro-MD",
 		});
 	});
+
+	it("writes only the information a document gives, as a caller in plain JavaScript might give it", async () => {
+		// Information built from a record: an author it doesn't know, and a key foaie doesn't write.
+		const info = Object.fromEntries([
+			["title", "Terms"],
+			["author", undefined],
+			["producer", "Billing 2.1"],
+		]);
+		const pdf = await render(page([{ text: "x" }], { info }));
+		const written = new TextDecoder("latin1").decode(pdf);
+		expect(written).toContain("/Title");
+		expect(written).not.toContain("/Author");
+		expect(written).not.toContain("/Producer");
+	});
 });
 
 describe("what foaie refuses", () => {
