@@ -272,6 +272,34 @@ describe("what foaie refuses", () => {
 			"table-too-wide",
 		],
 		[
+			"margins that leave no room on the page",
+			page([{ text: "x" }], {
+				page: {
+					size: "A5",
+					margin: { top: 36, right: 220, bottom: 36, left: 220 },
+				},
+			}),
+			"page-too-small",
+		],
+		[
+			"a line taller than the page's body",
+			page([{ text: "x", size: 600 }]),
+			"page-too-small",
+		],
+		[
+			"a table header that leaves no room for a row",
+			page([
+				{
+					table: {
+						widths: ["*"],
+						header: [[Array.from({ length: 50 }, () => "header").join("\n")]],
+						rows: [["row"]],
+					},
+				},
+			]),
+			"page-too-small",
+		],
+		[
 			"a footer taller than its margin",
 			page([{ text: "x" }], {
 				footer: () => [{ text: "one\ntwo\nthree\nfour" }],
